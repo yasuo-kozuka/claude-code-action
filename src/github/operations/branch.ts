@@ -27,8 +27,8 @@ function extractFirstLabel(githubData: FetchDataResult): string | undefined {
  * This prevents command injection by ensuring only safe characters are used.
  *
  * Valid branch names:
- * - Start with alphanumeric character, underscore, or @ (not dash, to prevent option injection)
- * - Contain only alphanumeric, forward slash, hyphen, underscore, period, hash (#), plus (+), comma (,), or at sign (@)
+ * - Start with a Unicode letter/number, underscore, or @ (not dash, to prevent option injection)
+ * - Contain only Unicode letters/numbers, forward slash, hyphen, underscore, period, hash (#), plus (+), comma (,), or at sign (@)
  * - Do not start or end with a period
  * - Do not end with a slash
  * - Do not contain '..' (path traversal)
@@ -71,12 +71,15 @@ export function validateBranchName(branchName: string): void {
   // _ is valid per git-check-ref-format anywhere in a ref name, including the first character;
   //   leading underscores are a common convention for release/internal branches (e.g.
   //   "_release/v1.2.3"), which previously failed validation as a PR's base branch.
+  // \p{L}/\p{N} (Unicode letters/numbers) are valid per git-check-ref-format and are used by
+  //   internationalized branch naming conventions (e.g. Japanese branch names like "岩上鋼材-DEV");
+  //   git and GitHub fully support non-ASCII refs, so restricting to ASCII alnum was unnecessarily strict.
   // All git calls use execFileSync (not shell interpolation), so none of these characters carry injection risk.
-  const validPattern = /^[a-zA-Z0-9@_][a-zA-Z0-9/_.#+,@-]*$/;
+  const validPattern = /^[\p{L}\p{N}@_][\p{L}\p{N}/_.#+,@-]*$/u;
 
   if (!validPattern.test(branchName)) {
     throw new Error(
-      `Invalid branch name: "${branchName}". Branch names must start with an alphanumeric character, underscore, or '@' and contain only alphanumeric characters, forward slashes, hyphens, underscores, periods, hashes (#), plus signs (+), commas (,), or at signs (@).`,
+      `Invalid branch name: "${branchName}". Branch names must start with a letter, number, underscore, or '@' and contain only letters, numbers, forward slashes, hyphens, underscores, periods, hashes (#), plus signs (+), commas (,), or at signs (@).`,
     );
   }
 

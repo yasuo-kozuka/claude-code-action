@@ -84,6 +84,14 @@ describe("validateBranchName", () => {
       expect(() => validateBranchName("_internal")).not.toThrow();
       expect(() => validateBranchName("_wip/feature-x")).not.toThrow();
     });
+
+    it("should accept branch names containing non-ASCII Unicode letters (git-valid, e.g. Japanese)", () => {
+      // git and GitHub fully support non-ASCII refs; restricting to ASCII alnum broke
+      // internationalized branch naming conventions such as customer-named dev branches.
+      expect(() => validateBranchName("岩上鋼材-DEV")).not.toThrow();
+      expect(() => validateBranchName("feat/add-機能追加")).not.toThrow();
+      expect(() => validateBranchName("修正-1024")).not.toThrow();
+    });
   });
 
   describe("command injection attempts", () => {
